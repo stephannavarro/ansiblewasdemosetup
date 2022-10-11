@@ -1,0 +1,11 @@
+number_of_users: 40
+user_name_for_list: hcloud
+project_name: ibm-default
+roles_list:
+  - vm_user
+  - deployer
+  #- self_service
+  - image_manager
+  - storage_manager
+  - vm_manager
+

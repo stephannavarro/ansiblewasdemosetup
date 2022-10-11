@@ -1,0 +1,79 @@
+---
+- hosts: pvc
+  gather_facts: false
+  user: root
+  vars:
+    user_name_for_list: test
+    number_of_users: 2
+  tasks:
+
+  - name: creating user / changing password
+    user:
+      state: present
+      name: "{{ 'test%02d'| format(item) }}"
+      groups: powervc-filter
+      generate_ssh_key: yes
+      password: "{{ 'ansiblewas' | password_hash('sha512') }}"
+    loop: "{{ range(1, number_of_users +1 , 1)|list }}"
+
+- hosts: localhost
+  gather_facts: false 
+  user: steph
+  vars:
+    user_name_for_list: test
+    number_of_users: 2
+    roles:
+      - deployer
+      - image_manager
+      - storage_manager
+      - vm_manager
+      - vm_user
+
+  tasks:
+  - os_project_info:
+      cloud: powervc
+      name: "{{ 'test%02d'| format(item) }}"
+    loop: "{{ range(1, number_of_users +1 , 1)|list }}"
+    register: result
+    #- debug:
+          #msg: "{{ result }}"
+          #msg: "{{ result | json_query( 'item[*].{name: name}' ) }}"
+          #msg: "{{ result | json_query( 'item[*]' ) }}"
+      
+
+
+  - name: creating project 
+    os_project:
+      cloud: powervc
+      endpoint_type: admin
+      state: present
+      name: "{{ 'test%02d'| format(item) }}"
+      description: "{{ 'test%02d'| format(item) }} demodescription"
+      domain_id: default
+      region_name: RegionOne
+      enabled: true 
+    loop: "{{ range(1, number_of_users +1 , 1)|list }}"
+
+  - name: assigning admin role to root user 
+    os_user_role:
+      cloud: powervc
+      user: root
+      role: admin
+      project: "{{ 'test%02d'| format(item) }}"
+      state: present
+    loop: "{{ range(1, number_of_users +1 , 1)|list }}"
+
+
+  - name: assigin  role to project
+    os_user_role:
+      cloud: powervc
+      user: "{{ 'test%02d'| format(item[0]) }}"
+      role: "{{ item[1] }}"
+      project: "{{ 'test%02d'| format(item[0]) }}"
+      state: present
+    with_nested: 
+      - "{{ range(1, number_of_users +1 , 1)|list }}"
+      - "{{roles}}" 
+
+  - meta: end_play
+

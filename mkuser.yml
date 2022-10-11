@@ -1,0 +1,65 @@
+---
+- hosts: pvc
+  gather_facts: false
+  user: root
+
+  tasks:
+  - name: creating user / changing password
+    user:
+      state: present
+      name: "{{user_name_for_list}}{{ '%02d'| format(item) }}"
+      groups: powervc-filter
+      generate_ssh_key: yes
+      ssh_key_bits: 1024
+      ssh_key_file: .ssh/id_rsa
+      password: "{{ 'ansibleibmi' | password_hash('sha512') }}"
+    loop: "{{ range(1, number_of_users + 1 , 1)|list }}"
+
+- hosts: localhost
+  gather_facts: False 
+
+  tasks:
+
+  - name: Authenticate to the cloud and retrieve the service catalog
+    os_auth:
+      cloud: powervc
+
+  - os_project_info:
+      cloud: powervc
+      name: "{{project_name}}"
+    register: result
+  - debug:
+      msg: "{{ result.openstack_projects }}"
+      
+  - name: assigin  role to project
+    os_user_role:
+      cloud: powervc
+      user: "{{user_name_for_list}}{{ '%02d'| format(item[0]) }}"
+      #user: "{{ 'cloud%02d'| format(item[0]) }}"
+      role:  "{{ item[1] }}" 
+      project: "{{project_name}}"
+      state: present
+    with_nested:
+      - "{{ range(1, number_of_users + 1  , 1)|list }}"
+      - "{{roles_list}}"
+
+- hosts: control
+  gather_facts: false
+  user: root
+  tasks:
+
+  - name: creating groupd
+    group: 
+      name: cloudgroup
+
+  - name: creating user / changing password
+    user:
+      state: present
+      name: "{{user_name_for_list}}{{ '%02d'| format(item) }}"
+      groups: cloudgroup
+      generate_ssh_key: yes
+      ssh_key_bits: 1024
+      ssh_key_file: .ssh/id_rsa
+      password: "{{ 'ansibleibmi' | password_hash('sha512') }}"
+    loop: "{{ range(1, number_of_users + 1  , 1)|list }}"
+

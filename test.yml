@@ -1,0 +1,16 @@
+---
+- hosts: localhost
+  gather_facts: False 
+  user: steph
+  vars:
+    user_name_for_list: "{{ user_prefix }}"
+    number_of_users: "{{ user_number }}"
+
+  tasks:
+  - debug: 
+      #msg:  "{{ 'was%02d' }}"
+      msg:  "{{user_name_for_list}}{{ '%02d'| format(item) }}"
+      #msg:  "{{ 'was%02d'| format(item) }}"
+      #msg:  "format(item) }}"
+    loop: "{{ range(1, number_of_users + 1  , 1)|list }}"
+

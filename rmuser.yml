@@ -1,0 +1,72 @@
+---
+- hosts: localhost
+  gather_facts: False 
+
+  tasks:
+  - name: Authenticate to the cloud and retrieve the service catalog
+    os_auth:
+      cloud: powervc
+  - os_project_info:
+      cloud: powervc
+      name: "{{project_name}}"
+    register: result
+  - debug:
+      msg: "{{ result.openstack_projects }}"
+  - name: unassigin  role to project
+    os_user_role:
+      state: absent
+      cloud: powervc
+      user: "{{user_name_for_list}}{{ '%02d'| format(item[0]) }}"
+      #user: "{{ user_prefix'%02d'| format(item) }}"
+      role:  "{{ item[1] }}"
+      project: "{{project_name}}"
+    with_nested:
+      - "{{ range(1, number_of_users + 1 , 1)|list }}"
+      - "{{roles_list}}"
+
+- hosts: pvc
+  gather_facts: false
+  user: root
+
+  tasks:
+
+  - name: removong user on Powervc 
+    user:
+      state: absent 
+      name: "{{user_name_for_list}}{{ '%02d'| format(item) }}"
+    loop: "{{ range(1, number_of_users + 1 , 1)|list }}"
+
+  - name: deleting home directory
+    file:
+      path: "/home/{{user_name_for_list}}{{ '%02d'| format(item) }}"
+      state: absent
+    loop: "{{ range(1, number_of_users + 1 , 1)|list }}"
+    tags: rmuser
+
+  
+- hosts: control
+  gather_facts: false
+  user: root
+
+  tasks:
+
+  - name: deleting  user on control node
+    user:
+      state: absent 
+      name: "{{user_name_for_list}}{{ '%02d'| format(item) }}"
+    loop: "{{ range(1, number_of_users + 1 , 1)|list }}"
+    register: userdel
+  - name: deleting home directory
+    file: 
+      path: "/home/{{user_name_for_list}}{{ '%02d'| format(item) }}"
+      state: absent    
+    loop: "{{ range(1, number_of_users + 1 , 1)|list }}"
+    tags: rmuser
+
+  - name: debug
+    debug: 
+      msg: "{{userdel}}"
+
+
+
+

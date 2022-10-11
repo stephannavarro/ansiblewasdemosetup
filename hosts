@@ -1,0 +1,7 @@
+control:
+  hosts:
+    10.3.44.171:
+      remote_tmp: /tmp/
+pvc:
+  hosts: 
+    10.3.44.65:

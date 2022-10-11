@@ -1,0 +1,11 @@
+number_of_users: 5
+user_name_for_list: teamibmi
+project_name: ibmi
+roles_list:
+  #- vm_user
+  #- deployer
+  #- self_service
+  #- image_manager
+  #- storage_manager
+  - vm_manager
+

@@ -1,0 +1,59 @@
+---
+- hosts: localhost
+  gather_facts: false 
+  user: steph
+  vars:
+    user_name_for_list: test
+    number_of_users: 2
+    roles:
+      - deployer
+      - image_manager
+      - storage_manager
+      - vm_manager
+      - vm_user
+
+  tasks:
+
+  - meta: end_play 
+
+  - name: removing  role to project
+    os_user_role:
+      cloud: powervc
+      user: "{{ 'test%02d'| format(item[0]) }}"
+      role: "{{ item[1] }}"
+      project: "{{ 'test%02d'| format(item[0]) }}"
+      state: absent
+    with_nested: 
+      - "{{ range(1, number_of_users +1 , 1)|list }}"
+      - "{{roles}}" 
+
+  - name: removing  project 
+    os_project:
+      cloud: powervc
+      endpoint_type: admin
+      state: absent
+      name: "{{ 'test%02d'| format(item) }}"
+      description: "{{ 'test%02d'| format(item) }} demodescription"
+      domain_id: default
+      region_name: RegionOne
+      enabled: true 
+    loop: "{{ range(1, number_of_users +1 , 1)|list }}"
+
+  - meta: end_play
+
+- hosts: pvc
+  gather_facts: false
+  user: root
+  vars:
+    user_name_for_list: test
+    number_of_users: 2
+  tasks:
+
+  - name: removing user / changing password
+    user:
+      state: absent
+      name: "{{ 'test%02d'| format(item) }}"
+      groups: powervc-filter
+      force: yes
+    loop: "{{ range(1, number_of_users +1 , 1)|list }}"
+
