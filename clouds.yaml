@@ -2,9 +2,9 @@ clouds:
 
   powervc:
     auth:
-      auth_url: https://10.3.44.65:5000/v3/
+      auth_url: https://myhost:5000/v3/
       domain_name: Default
-      username: root
-      password: powerlinux202
+      username: 
+      password: 
       project_name: ibm-default
     verify: false
